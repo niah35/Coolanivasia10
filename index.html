@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Synth</title>
+    <style>
+        :root {
+            --bg-color: #111;
+            --btn-1: #ff0055;
+            --btn-2: #00ddff;
+            --btn-3: #ccff00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden; /* Prevents scrollbars when effects go off screen */
+        }
+
+        /* Container for buttons to keep them on top */
+        .controls {
+            z-index: 1000;
+            display: flex;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.1s, filter 0.2s;
+            color: #111;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Button Specific Styles */
+        #btn-burst { background: var(--btn-1); box-shadow: 0 0 15px var(--btn-1); }
+        #btn-ripple { background: var(--btn-2); box-shadow: 0 0 15px var(--btn-2); }
+        #btn-rain { background: var(--btn-3); box-shadow: 0 0 15px var(--btn-3); }
+
+        /* The container for all visual effects */
+        #effect-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to buttons */
+            z-index: 1;
+        }
+
+        /* --- ANIMATION CLASSES --- */
+
+        /* 1. Burst Particle */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: fadeOut 1s forwards;
+        }
+
+        /* 2. Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border: 5px solid white;
+            transform: translate(-50%, -50%);
+            animation: expandRipple 1.5s ease-out forwards;
+            opacity: 0.8;
+        }
+
+        /* 3. Digital Rain/Bar */
+        .rain-bar {
+            position: absolute;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(to top, transparent, var(--btn-3));
+            animation: shootUp 2s ease-out forwards;
+        }
+
+        /* --- KEYFRAMES --- */
+        
+        @keyframes fadeOut {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        @keyframes expandRipple {
+            0% { width: 0px; height: 0px; border-width: 10px; opacity: 1; }
+            100% { width: 800px; height: 800px; border-width: 0px; opacity: 0; }
+        }
+
+        @keyframes shootUp {
+            0% { height: 0; opacity: 1; filter: hue-rotate(0deg); }
+            50% { opacity: 0.8; }
+            100% { height: 120%; opacity: 0; filter: hue-rotate(90deg); bottom: 20%; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button id="btn-burst">Fireworks</button>
+        <button id="btn-ripple">Shockwave</button>
+        <button id="btn-rain">Matrix Rise</button>
+    </div>
+
+    <div id="effect-canvas"></div>
+
+    <script>
+        const canvas = document.getElementById('effect-canvas');
+
+        // Helper: Random Number Generator
+        const random = (min, max) => Math.random() * (max - min) + min;
+
+        // --- FUNCTION 1: FIREWORKS BURST ---
+        document.getElementById('btn-burst').addEventListener('click', (e) => {
+            const colors = ['#ff0055', '#ff9900', '#ffff00', '#ff00cc'];
+            const rect = e.target.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // Create 30 particles
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size and color
+                const size = random(5, 15);
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.background = colors[Math.floor(random(0, colors.length))];
+                
+                // Set initial position
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+
+                // Add physics via Web Animations API for complex movement
+                const destinationX = (Math.random() - 0.5) * 400;
+                const destinationY = (Math.random() - 0.5) * 400;
+                
+                canvas.appendChild(particle);
+
+                const animation = particle.animate([
+                    { transform: `translate(0, 0)` },
+                    { transform: `translate(${destinationX}px, ${destinationY}px)` }
+                ], {
+                    duration: 1000,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                });
+
+                // Clean up DOM after animation
+                animation.onfinish = () => particle.remove();
+            }
+        });
+
+        // --- FUNCTION 2: SHOCKWAVE ---
+        document.getElementById('btn-ripple').addEventListener('click', () => {
+            const ripple = document.createElement('div');
+            ripple.classList.add('ripple');
+            
+            // Randomize position on screen
+            const x = random(0, window.innerWidth);
+            const y = random(0, window.innerHeight);
+            
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.style.borderColor = `hsl(${random(180, 300)}, 100%, 50%)`;
+
+            canvas.appendChild(ripple);
+
+            // Remove after CSS animation ends (1.5s)
+            setTimeout(() => ripple.remove(), 1500);
+        });
+
+        // --- FUNCTION 3: MATRIX RISE ---
+        document.getElementById('btn-rain').addEventListener('click', () => {
+            // Spawn 5 beams at once
+            for(let i=0; i<5; i++){
+                const bar = document.createElement('div');
+                bar.classList.add('rain-bar');
+                
+                // Random horizontal position
+                bar.style.left = `${random(0, 100)}%`;
+                
+                // Random width
+                bar.style.width = `${random(10, 50)}px`;
+
+                // Stagger animations slightly
+                bar.style.animationDelay = `${random(0, 0.5)}s`;
+                bar.style.background = `linear-gradient(to top, transparent, hsl(${random(60, 120)}, 100%, 50%))`;
+
+                canvas.appendChild(bar);
+                setTimeout(() => bar.remove(), 2500); // 2s duration + 0.5s delay max
+            }
+        });
+
+    </script>
+</body>
+</html>
